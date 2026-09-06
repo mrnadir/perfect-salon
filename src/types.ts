@@ -6,12 +6,15 @@ export interface Cutter {
   createdAt: string
 }
 
+export type PaymentMethod = 'Cash' | 'Bkash'
+
 export interface CutterIncome {
   id: string
   cutterId: string
   amount: number
   note: string
   date: string
+  paymentMethod: PaymentMethod
   createdAt: string
 }
 
@@ -19,7 +22,6 @@ export interface CutterExpense {
   id: string
   cutterId: string
   amount: number
-  category: string
   note: string
   date: string
   createdAt: string

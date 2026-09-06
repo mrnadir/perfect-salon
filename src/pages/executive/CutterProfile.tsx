@@ -1,6 +1,7 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react'
+import { ConfirmDeleteModal } from '../../components/ConfirmDeleteModal'
 import { useData } from '../../context/DataContext'
 import { formatMoney, todayISO } from '../../lib/utils'
 import {
@@ -12,13 +13,9 @@ import {
   StatCard,
 } from '../../components/ui'
 
-const EXPENSE_CATEGORIES = [
-  'Products',
-  'Tools',
-  'Transport',
-  'Food',
-  'Other',
-]
+type PendingDelete =
+  | { kind: 'income'; id: string; label: string }
+  | { kind: 'expense'; id: string; label: string }
 
 export function CutterProfile() {
   const { id } = useParams()
@@ -40,9 +37,10 @@ export function CutterProfile() {
   const [incomeDate, setIncomeDate] = useState(today)
 
   const [expAmount, setExpAmount] = useState('')
-  const [expCategory, setExpCategory] = useState(EXPENSE_CATEGORIES[0])
   const [expNote, setExpNote] = useState('')
   const [expDate, setExpDate] = useState(today)
+  const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   const mineIncome = useMemo(
     () => incomes.filter((i) => i.cutterId === id),
@@ -73,6 +71,7 @@ export function CutterProfile() {
       amount,
       note: incomeNote,
       date: incomeDate,
+      paymentMethod: 'Cash',
     })
     setIncomeAmount('')
     setIncomeNote('')
@@ -86,14 +85,32 @@ export function CutterProfile() {
     addExpense({
       cutterId: cutter!.id,
       amount,
-      category: expCategory,
       note: expNote,
       date: expDate,
     })
     setExpAmount('')
     setExpNote('')
-    setExpCategory(EXPENSE_CATEGORIES[0])
     setExpDate(today)
+  }
+
+  function closeDelete() {
+    if (deleting) return
+    setPendingDelete(null)
+  }
+
+  async function confirmDelete() {
+    if (!pendingDelete) return
+    setDeleting(true)
+    try {
+      if (pendingDelete.kind === 'income') {
+        await deleteIncome(pendingDelete.id)
+      } else {
+        await deleteExpense(pendingDelete.id)
+      }
+      setPendingDelete(null)
+    } finally {
+      setDeleting(false)
+    }
   }
 
   return (
@@ -189,7 +206,14 @@ export function CutterProfile() {
                     <button
                       type="button"
                       className={btnGhost}
-                      onClick={() => deleteIncome(i.id)}
+                      disabled={deleting}
+                      onClick={() =>
+                        setPendingDelete({
+                          kind: 'income',
+                          id: i.id,
+                          label: i.note || 'Income',
+                        })
+                      }
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -221,19 +245,6 @@ export function CutterProfile() {
                 required
               />
             </Field>
-            <Field label="Category">
-              <select
-                className={inputClass}
-                value={expCategory}
-                onChange={(e) => setExpCategory(e.target.value)}
-              >
-                {EXPENSE_CATEGORIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </Field>
             <Field label="Note">
               <input
                 className={inputClass}
@@ -258,10 +269,7 @@ export function CutterProfile() {
                   className="flex items-center justify-between gap-3 rounded-xl border border-border/70 px-3 py-2 text-sm"
                 >
                   <div>
-                    <p className="text-text">
-                      {e.category}
-                      {e.note ? ` · ${e.note}` : ''}
-                    </p>
+                    <p className="text-text">{e.note || 'Expense'}</p>
                     <p className="text-xs text-text-muted">{e.date}</p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -271,7 +279,14 @@ export function CutterProfile() {
                     <button
                       type="button"
                       className={btnGhost}
-                      onClick={() => deleteExpense(e.id)}
+                      disabled={deleting}
+                      onClick={() =>
+                        setPendingDelete({
+                          kind: 'expense',
+                          id: e.id,
+                          label: e.note || 'Expense',
+                        })
+                      }
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -282,6 +297,25 @@ export function CutterProfile() {
           </div>
         </SectionCard>
       </div>
+
+      <ConfirmDeleteModal
+        open={Boolean(pendingDelete)}
+        eyebrow={
+          pendingDelete?.kind === 'expense' ? 'Delete expense' : 'Delete income'
+        }
+        message={
+          <>
+            Delete{' '}
+            <span className="font-semibold text-text">
+              {pendingDelete?.label}
+            </span>
+            ? This cannot be undone.
+          </>
+        }
+        deleting={deleting}
+        onClose={closeDelete}
+        onConfirm={() => void confirmDelete()}
+      />
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
 import { PackagePlus, Pencil, Trash2, X } from 'lucide-react'
+import { ConfirmDeleteModal } from '../../components/ConfirmDeleteModal'
 import { useData } from '../../context/DataContext'
 import type { StockItem } from '../../types'
 import {
@@ -19,6 +20,8 @@ export function ManagementStock() {
   const [form, setForm] = useState(empty)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<StockItem | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   function openAdd() {
     setEditingId(null)
@@ -44,6 +47,22 @@ export function ManagementStock() {
     setEditingId(null)
     setForm(empty)
     setError(null)
+  }
+
+  function closeDelete() {
+    if (deleting) return
+    setDeleteTarget(null)
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return
+    setDeleting(true)
+    try {
+      await deleteStockItem(deleteTarget.id)
+      setDeleteTarget(null)
+    } finally {
+      setDeleting(false)
+    }
   }
 
   async function onSubmit(e: FormEvent) {
@@ -139,11 +158,7 @@ export function ManagementStock() {
                           <button
                             type="button"
                             className={btnGhost}
-                            onClick={() => {
-                              if (confirm(`Delete ${item.name}?`)) {
-                                deleteStockItem(item.id)
-                              }
-                            }}
+                            onClick={() => setDeleteTarget(item)}
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -166,6 +181,23 @@ export function ManagementStock() {
         onClose={closeModal}
         onChange={setForm}
         onSubmit={onSubmit}
+      />
+
+      <ConfirmDeleteModal
+        open={Boolean(deleteTarget)}
+        eyebrow="Delete product"
+        message={
+          <>
+            Delete{' '}
+            <span className="font-semibold text-text">
+              {deleteTarget?.name}
+            </span>
+            ? This cannot be undone.
+          </>
+        }
+        deleting={deleting}
+        onClose={closeDelete}
+        onConfirm={() => void confirmDelete()}
       />
     </div>
   )

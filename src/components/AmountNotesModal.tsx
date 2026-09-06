@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
 import { X } from 'lucide-react'
+import type { PaymentMethod } from '../types'
 
 type ModalKind = 'income' | 'expense'
 
@@ -14,10 +15,15 @@ export function AmountNotesModal({
   kind: ModalKind
   cutterName: string
   onClose: () => void
-  onSubmit: (data: { amount: number; note: string }) => void
+  onSubmit: (data: {
+    amount: number
+    note: string
+    paymentMethod?: PaymentMethod
+  }) => void
 }) {
   const [amount, setAmount] = useState('')
   const [note, setNote] = useState('')
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('Cash')
   const titleId = useId()
   const amountRef = useRef<HTMLInputElement>(null)
 
@@ -25,6 +31,7 @@ export function AmountNotesModal({
     if (!open) return
     setAmount('')
     setNote('')
+    setPaymentMethod('Cash')
     const t = window.setTimeout(() => amountRef.current?.focus(), 50)
     return () => window.clearTimeout(t)
   }, [open, kind, cutterName])
@@ -46,7 +53,11 @@ export function AmountNotesModal({
     e.preventDefault()
     const value = Number(amount)
     if (!value || value <= 0) return
-    onSubmit({ amount: value, note: note.trim() })
+    onSubmit({
+      amount: value,
+      note: note.trim(),
+      ...(isIncome ? { paymentMethod } : {}),
+    })
   }
 
   return (
@@ -98,6 +109,34 @@ export function AmountNotesModal({
               className="w-full rounded-xl border border-border bg-surface-muted px-3 py-2.5 text-text outline-none transition focus:border-accent focus:bg-bg"
             />
           </label>
+
+          {isIncome ? (
+            <div className="space-y-1.5">
+              <span className="text-sm font-medium text-text-muted">
+                Payment method
+              </span>
+              <div className="grid grid-cols-2 gap-2">
+                {(['Cash', 'Bkash'] as const).map((method) => {
+                  const active = paymentMethod === method
+                  return (
+                    <button
+                      key={method}
+                      type="button"
+                      onClick={() => setPaymentMethod(method)}
+                      className={[
+                        'rounded-xl border px-3 py-2.5 text-sm font-semibold transition',
+                        active
+                          ? 'border-accent bg-accent text-primary'
+                          : 'border-border bg-surface-muted text-text-muted hover:border-accent/40 hover:text-primary',
+                      ].join(' ')}
+                    >
+                      {method}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          ) : null}
 
           <label className="block space-y-1.5">
             <span className="text-sm font-medium text-text-muted">Notes</span>

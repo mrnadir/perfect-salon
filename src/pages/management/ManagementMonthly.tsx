@@ -1,7 +1,9 @@
 import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from 'react'
 import { Plus, Trash2, X } from 'lucide-react'
+import { ConfirmDeleteModal } from '../../components/ConfirmDeleteModal'
 import { useData } from '../../context/DataContext'
 import { currentMonth, formatMoney } from '../../lib/utils'
+import type { MonthlyCost } from '../../types'
 import {
   btnGhost,
   btnPrimary,
@@ -16,6 +18,8 @@ export function ManagementMonthly() {
     useData()
   const [month, setMonth] = useState(currentMonth())
   const [open, setOpen] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<MonthlyCost | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   const monthRows = useMemo(
     () => monthlyCosts.filter((m) => m.month === month),
@@ -46,6 +50,22 @@ export function ManagementMonthly() {
   )
 
   const grandTotal = rentTotal + otherMonthly + shopInMonth + cutterExpInMonth
+
+  function closeDelete() {
+    if (deleting) return
+    setDeleteTarget(null)
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return
+    setDeleting(true)
+    try {
+      await deleteMonthlyCost(deleteTarget.id)
+      setDeleteTarget(null)
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -126,7 +146,8 @@ export function ManagementMonthly() {
                       <button
                         type="button"
                         className={btnGhost}
-                        onClick={() => deleteMonthlyCost(m.id)}
+                        disabled={deleting}
+                        onClick={() => setDeleteTarget(m)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -147,6 +168,23 @@ export function ManagementMonthly() {
           addMonthlyCost(data)
           setOpen(false)
         }}
+      />
+
+      <ConfirmDeleteModal
+        open={Boolean(deleteTarget)}
+        eyebrow="Delete monthly cost"
+        message={
+          <>
+            Delete{' '}
+            <span className="font-semibold text-text">
+              {deleteTarget?.label}
+            </span>
+            ? This cannot be undone.
+          </>
+        }
+        deleting={deleting}
+        onClose={closeDelete}
+        onConfirm={() => void confirmDelete()}
       />
     </div>
   )
