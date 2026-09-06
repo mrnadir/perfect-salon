@@ -1,3 +1,4 @@
+import { Check, Minus } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 export function StatCard({
@@ -70,6 +71,52 @@ export function Field({
       <span className="text-sm text-text-muted">{label}</span>
       {children}
     </label>
+  )
+}
+
+export function Checkbox({
+  checked,
+  indeterminate = false,
+  onChange,
+  disabled,
+  'aria-label': ariaLabel,
+}: {
+  checked: boolean
+  indeterminate?: boolean
+  onChange: () => void
+  disabled?: boolean
+  'aria-label'?: string
+}) {
+  const active = checked || indeterminate
+
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={indeterminate ? 'mixed' : checked}
+      aria-label={ariaLabel}
+      disabled={disabled}
+      onClick={onChange}
+      className={[
+        'inline-flex h-[1.125rem] w-[1.125rem] shrink-0 items-center justify-center rounded-[0.35rem] border transition',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/35 focus-visible:ring-offset-2 focus-visible:ring-offset-surface',
+        'disabled:cursor-not-allowed disabled:opacity-45',
+        active
+          ? 'border-accent bg-accent text-primary shadow-[0_1px_2px_rgba(201,162,75,0.35)]'
+          : 'border-border bg-surface-muted text-transparent hover:border-accent/55 hover:bg-accent-soft',
+      ].join(' ')}
+    >
+      {indeterminate && !checked ? (
+        <Minus className="h-3 w-3 stroke-[3]" />
+      ) : (
+        <Check
+          className={[
+            'h-3 w-3 stroke-[3] transition',
+            checked ? 'opacity-100 scale-100' : 'opacity-0 scale-75',
+          ].join(' ')}
+        />
+      )}
+    </button>
   )
 }
 

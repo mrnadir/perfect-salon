@@ -10,9 +10,12 @@ import {
 import {
   deleteCutterRow,
   deleteExpenseRow,
+  deleteExpenseRows,
   deleteIncomeRow,
+  deleteIncomeRows,
   deleteMonthlyCostRow,
   deleteShopExpenseRow,
+  deleteShopExpenseRows,
   deleteStockRow,
   fetchAllData,
   insertCutter,
@@ -66,7 +69,9 @@ interface DataContextValue {
     date?: string
   }) => Promise<void>
   deleteIncome: (id: string) => Promise<void>
+  deleteIncomes: (ids: string[]) => Promise<void>
   deleteExpense: (id: string) => Promise<void>
+  deleteExpenses: (ids: string[]) => Promise<void>
   addShopExpense: (data: {
     amount: number
     note: string
@@ -74,6 +79,7 @@ interface DataContextValue {
     date?: string
   }) => Promise<void>
   deleteShopExpense: (id: string) => Promise<void>
+  deleteShopExpenses: (ids: string[]) => Promise<void>
   addStockItem: (data: {
     name: string
     quantity: number
@@ -253,9 +259,23 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setIncomes((prev) => prev.filter((i) => i.id !== id))
   }, [])
 
+  const deleteIncomes = useCallback(async (ids: string[]) => {
+    if (ids.length === 0) return
+    await deleteIncomeRows(ids)
+    const remove = new Set(ids)
+    setIncomes((prev) => prev.filter((i) => !remove.has(i.id)))
+  }, [])
+
   const deleteExpense = useCallback(async (id: string) => {
     await deleteExpenseRow(id)
     setExpenses((prev) => prev.filter((e) => e.id !== id))
+  }, [])
+
+  const deleteExpenses = useCallback(async (ids: string[]) => {
+    if (ids.length === 0) return
+    await deleteExpenseRows(ids)
+    const remove = new Set(ids)
+    setExpenses((prev) => prev.filter((e) => !remove.has(e.id)))
   }, [])
 
   const addShopExpense = useCallback(
@@ -282,6 +302,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const deleteShopExpense = useCallback(async (id: string) => {
     await deleteShopExpenseRow(id)
     setShopExpenses((prev) => prev.filter((e) => e.id !== id))
+  }, [])
+
+  const deleteShopExpenses = useCallback(async (ids: string[]) => {
+    if (ids.length === 0) return
+    await deleteShopExpenseRows(ids)
+    const remove = new Set(ids)
+    setShopExpenses((prev) => prev.filter((e) => !remove.has(e.id)))
   }, [])
 
   const addStockItem = useCallback(
@@ -391,9 +418,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
       addIncome,
       addExpense,
       deleteIncome,
+      deleteIncomes,
       deleteExpense,
+      deleteExpenses,
       addShopExpense,
       deleteShopExpense,
+      deleteShopExpenses,
       addStockItem,
       updateStockItem,
       deleteStockItem,
@@ -416,9 +446,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
       addIncome,
       addExpense,
       deleteIncome,
+      deleteIncomes,
       deleteExpense,
+      deleteExpenses,
       addShopExpense,
       deleteShopExpense,
+      deleteShopExpenses,
       addStockItem,
       updateStockItem,
       deleteStockItem,

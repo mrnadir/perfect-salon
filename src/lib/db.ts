@@ -174,6 +174,12 @@ export async function deleteIncomeRow(id: string) {
   if (error) throw error
 }
 
+export async function deleteIncomeRows(ids: string[]) {
+  if (ids.length === 0) return
+  const { error } = await supabase.from('incomes').delete().in('id', ids)
+  if (error) throw error
+}
+
 export async function insertExpense(e: CutterExpense) {
   const { error } = await supabase.from('expenses').insert({
     id: e.id,
@@ -192,6 +198,12 @@ export async function deleteExpenseRow(id: string) {
   if (error) throw error
 }
 
+export async function deleteExpenseRows(ids: string[]) {
+  if (ids.length === 0) return
+  const { error } = await supabase.from('expenses').delete().in('id', ids)
+  if (error) throw error
+}
+
 export async function insertShopExpense(e: ShopExpense) {
   const { error } = await supabase.from('shop_expenses').insert({
     id: e.id,
@@ -206,6 +218,12 @@ export async function insertShopExpense(e: ShopExpense) {
 
 export async function deleteShopExpenseRow(id: string) {
   const { error } = await supabase.from('shop_expenses').delete().eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteShopExpenseRows(ids: string[]) {
+  if (ids.length === 0) return
+  const { error } = await supabase.from('shop_expenses').delete().in('id', ids)
   if (error) throw error
 }
 

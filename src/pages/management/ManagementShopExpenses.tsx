@@ -1,12 +1,24 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { Trash2 } from 'lucide-react'
 import { useData } from '../../context/DataContext'
 import { formatMoney } from '../../lib/utils'
-import { Field, inputClass, SectionCard, selectClass, StatCard } from '../../components/ui'
+import {
+  btnGhost,
+  Checkbox,
+  Field,
+  inputClass,
+  SectionCard,
+  selectClass,
+  StatCard,
+} from '../../components/ui'
 
 export function ManagementShopExpenses() {
-  const { cutters, shopExpenses } = useData()
+  const { cutters, shopExpenses, deleteShopExpense, deleteShopExpenses } =
+    useData()
   const [dateFilter, setDateFilter] = useState('')
   const [cutterFilter, setCutterFilter] = useState('all')
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [busy, setBusy] = useState(false)
 
   const cutterName = useMemo(() => {
     const map = new Map(cutters.map((c) => [c.id, c.name]))
@@ -22,6 +34,15 @@ export function ManagementShopExpenses() {
       ),
     [shopExpenses, cutterFilter, dateFilter],
   )
+
+  const filteredIds = useMemo(() => filtered.map((e) => e.id), [filtered])
+
+  useEffect(() => {
+    setSelected((prev) => {
+      const next = new Set([...prev].filter((id) => filteredIds.includes(id)))
+      return next.size === prev.size ? prev : next
+    })
+  }, [filteredIds])
 
   const total = filtered.reduce((s, e) => s + e.amount, 0)
 
@@ -41,6 +62,53 @@ export function ManagementShopExpenses() {
   }, [filtered, cutterName])
 
   const hasFilters = cutterFilter !== 'all' || Boolean(dateFilter)
+  const allSelected =
+    filteredIds.length > 0 && filteredIds.every((id) => selected.has(id))
+  const someSelected = selected.size > 0 && !allSelected
+
+  function toggleOne(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function toggleAll() {
+    setSelected(allSelected ? new Set() : new Set(filteredIds))
+  }
+
+  async function removeOne(id: string) {
+    if (!window.confirm('Delete this shop expense entry?')) return
+    setBusy(true)
+    try {
+      await deleteShopExpense(id)
+      setSelected((prev) => {
+        const next = new Set(prev)
+        next.delete(id)
+        return next
+      })
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function removeSelected() {
+    const ids = [...selected]
+    if (ids.length === 0) return
+    if (
+      !window.confirm(`Delete ${ids.length} selected shop expense entries?`)
+    )
+      return
+    setBusy(true)
+    try {
+      await deleteShopExpenses(ids)
+      setSelected(new Set())
+    } finally {
+      setBusy(false)
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -127,23 +195,52 @@ export function ManagementShopExpenses() {
       <SectionCard
         title="All shop expenses"
         description={`${filtered.length} entries`}
+        action={
+          selected.size > 0 ? (
+            <button
+              type="button"
+              className={btnGhost}
+              disabled={busy}
+              onClick={() => void removeSelected()}
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete selected ({selected.size})
+            </button>
+          ) : null
+        }
       >
         {filtered.length === 0 ? (
           <p className="text-sm text-text-muted">No records.</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[560px] text-left text-sm">
+            <table className="w-full min-w-[600px] text-left text-sm">
               <thead>
                 <tr className="border-b border-border text-text-muted">
+                  <th className="w-10 pb-3 font-medium">
+                    <Checkbox
+                      checked={allSelected}
+                      indeterminate={someSelected}
+                      onChange={toggleAll}
+                      aria-label="Select all shop expenses"
+                    />
+                  </th>
                   <th className="pb-3 font-medium">Date</th>
                   <th className="pb-3 font-medium">Amount</th>
                   <th className="pb-3 font-medium">Purpose / Notes</th>
                   <th className="pb-3 font-medium">Added by</th>
+                  <th className="pb-3 font-medium" />
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((e) => (
                   <tr key={e.id} className="border-b border-border/60">
+                    <td className="py-3">
+                      <Checkbox
+                        checked={selected.has(e.id)}
+                        onChange={() => toggleOne(e.id)}
+                        aria-label={`Select shop expense ${e.date}`}
+                      />
+                    </td>
                     <td className="py-3 text-text-muted">{e.date}</td>
                     <td className="py-3 font-medium text-primary">
                       {formatMoney(e.amount)}
@@ -151,6 +248,17 @@ export function ManagementShopExpenses() {
                     <td className="py-3 text-text">{e.note || '—'}</td>
                     <td className="py-3 text-text-muted">
                       {cutterName(e.addedByCutterId)}
+                    </td>
+                    <td className="py-3 text-right">
+                      <button
+                        type="button"
+                        className={btnGhost}
+                        disabled={busy}
+                        onClick={() => void removeOne(e.id)}
+                        aria-label="Delete shop expense"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                     </td>
                   </tr>
                 ))}

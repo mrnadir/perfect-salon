@@ -20,8 +20,8 @@ React + Vite + TypeScript + Tailwind CSS
 ## Run
 
 ```bash
-pnpm install
-pnpm dev
+yarn
+yarn dev
 ```
 
 ## Management login
