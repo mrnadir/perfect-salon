@@ -220,12 +220,19 @@ function AddShopExpenseModal({
           <Field label="Amount (৳)">
             <input
               ref={amountRef}
-              type="number"
-              min="1"
-              step="1"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               required
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={(e) =>
+                setAmount(e.target.value.replace(/\D/g, ''))
+              }
+              onKeyDown={(e) => {
+                if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                  e.preventDefault()
+                }
+              }}
               placeholder="0"
               className={inputClass}
             />

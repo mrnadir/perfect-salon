@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from 'react'
 import {
+  deleteCutterRow,
   deleteExpenseRow,
   deleteIncomeRow,
   deleteMonthlyCostRow,
@@ -50,6 +51,7 @@ interface DataContextValue {
     id: string,
     data: Partial<Omit<Cutter, 'id' | 'createdAt'>>,
   ) => Promise<string | null>
+  deleteCutter: (id: string) => Promise<string | null>
   addIncome: (data: {
     cutterId: string
     amount: number
@@ -144,8 +146,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
         id: uid('cutter'),
         name: data.name.trim(),
         phone: data.phone?.trim() || undefined,
-        specialty: data.specialty?.trim() || undefined,
-        notes: data.notes?.trim() || undefined,
         active: data.active ?? true,
         createdAt: new Date().toISOString(),
       }
@@ -170,12 +170,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
         name: data.name?.trim(),
         phone:
           data.phone !== undefined ? data.phone.trim() || undefined : undefined,
-        specialty:
-          data.specialty !== undefined
-            ? data.specialty.trim() || undefined
-            : undefined,
-        notes:
-          data.notes !== undefined ? data.notes.trim() || undefined : undefined,
       }
       try {
         await patchCutter(id, trimmed)
@@ -188,11 +182,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
                   name: trimmed.name ?? c.name,
                   phone:
                     data.phone !== undefined ? trimmed.phone : c.phone,
-                  specialty:
-                    data.specialty !== undefined
-                      ? trimmed.specialty
-                      : c.specialty,
-                  notes: data.notes !== undefined ? trimmed.notes : c.notes,
                 }
               : c,
           ),
@@ -204,6 +193,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
     },
     [],
   )
+
+  const deleteCutter = useCallback(async (id: string) => {
+    try {
+      await deleteCutterRow(id)
+      setCutters((prev) => prev.filter((c) => c.id !== id))
+      return null
+    } catch (err) {
+      return toErrorMessage(err)
+    }
+  }, [])
 
   const addIncome = useCallback(
     async (data: {
@@ -388,6 +387,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       monthlyCosts,
       addCutter,
       updateCutter,
+      deleteCutter,
       addIncome,
       addExpense,
       deleteIncome,
@@ -412,6 +412,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       monthlyCosts,
       addCutter,
       updateCutter,
+      deleteCutter,
       addIncome,
       addExpense,
       deleteIncome,

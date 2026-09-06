@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useData } from '../../context/DataContext'
 import { formatMoney } from '../../lib/utils'
-import { Field, inputClass, SectionCard, StatCard } from '../../components/ui'
+import { Field, inputClass, SectionCard, selectClass, StatCard } from '../../components/ui'
 
 export function ManagementShopExpenses() {
   const { cutters, shopExpenses } = useData()
@@ -40,50 +40,53 @@ export function ManagementShopExpenses() {
       .sort((a, b) => b.amount - a.amount)
   }, [filtered, cutterName])
 
+  const hasFilters = cutterFilter !== 'all' || Boolean(dateFilter)
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-3xl font-semibold text-primary">
-          Shop Expense Summary
-        </h1>
-        <p className="mt-1 text-text-muted">
-          Overview of shop expenses — amount, purpose, and who added
-        </p>
-      </div>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="min-w-0">
+          <h1 className="font-display text-3xl font-semibold text-primary">
+            Shop Expense Summary
+          </h1>
+          <p className="mt-1 text-text-muted">
+            Overview of shop expenses — amount, purpose, and who added
+          </p>
+        </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Field label="Added by">
-          <select
-            className={inputClass}
-            value={cutterFilter}
-            onChange={(e) => setCutterFilter(e.target.value)}
-          >
-            <option value="all">All cutters</option>
-            {cutters.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </Field>
-        <Field label="Date">
-          <input
-            type="date"
-            className={inputClass}
-            value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value)}
-          />
-        </Field>
-        <div className="flex items-end">
+        <div className="flex flex-wrap items-end gap-3">
+          <Field label="Added by">
+            <select
+              className={`${selectClass} min-w-[10rem]`}
+              value={cutterFilter}
+              onChange={(e) => setCutterFilter(e.target.value)}
+            >
+              <option value="all">All cutters</option>
+              {cutters.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Date">
+            <input
+              type="date"
+              className={inputClass}
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+            />
+          </Field>
           <button
             type="button"
-            className="rounded-xl border border-border px-4 py-2.5 text-sm text-text-muted"
+            disabled={!hasFilters}
+            className="rounded-xl border border-border px-4 py-2.5 text-sm text-text-muted transition hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
             onClick={() => {
               setCutterFilter('all')
               setDateFilter('')
             }}
           >
-            Clear filters
+            Clear
           </button>
         </div>
       </div>
@@ -98,18 +101,25 @@ export function ManagementShopExpenses() {
         {byCutter.length === 0 ? (
           <p className="text-sm text-text-muted">No data.</p>
         ) : (
-          <div className="space-y-2">
-            {byCutter.map((row) => (
-              <div
-                key={row.id}
-                className="flex items-center justify-between rounded-xl border border-border/70 px-4 py-3 text-sm"
-              >
-                <span className="text-text">{row.name}</span>
-                <span className="font-medium text-primary">
-                  {formatMoney(row.amount)}
-                </span>
-              </div>
-            ))}
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[360px] text-left text-sm">
+              <thead>
+                <tr className="border-b border-border text-text-muted">
+                  <th className="pb-3 font-medium">Added by</th>
+                  <th className="pb-3 font-medium text-right">Total expense</th>
+                </tr>
+              </thead>
+              <tbody>
+                {byCutter.map((row) => (
+                  <tr key={row.id} className="border-b border-border/60">
+                    <td className="py-3 text-text">{row.name}</td>
+                    <td className="py-3 text-right font-medium text-primary">
+                      {formatMoney(row.amount)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </SectionCard>

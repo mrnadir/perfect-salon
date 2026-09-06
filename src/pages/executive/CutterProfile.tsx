@@ -112,12 +112,8 @@ export function CutterProfile() {
           {cutter.name}
         </h1>
         <p className="mt-2 text-sm text-text-muted">
-          {[cutter.specialty, cutter.phone].filter(Boolean).join(' · ') ||
-            'No extra details'}
+          {cutter.phone || 'No phone number'}
         </p>
-        {cutter.notes ? (
-          <p className="mt-3 text-sm text-text-muted">{cutter.notes}</p>
-        ) : null}
       </section>
 
       <div className="grid gap-4 sm:grid-cols-3">

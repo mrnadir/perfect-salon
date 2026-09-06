@@ -77,7 +77,7 @@ export function ManagementOverview() {
           <li>• Daily income per cutter</li>
           <li>• Daily expense per cutter</li>
           <li>• Shop expense summary</li>
-          <li>• Cosmetics / item stock</li>
+          <li>• Product stock</li>
           <li>• Shop rent + monthly expenses</li>
         </ul>
       </SectionCard>

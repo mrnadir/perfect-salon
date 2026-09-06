@@ -121,7 +121,7 @@ export function ManagementLayout() {
           { to: '/management/income', label: 'Cutter Income' },
           { to: '/management/expenses', label: 'Cutter Expense' },
           { to: '/management/shop-expenses', label: 'Shop Expense' },
-          { to: '/management/stock', label: 'Cosmetics Stock' },
+          { to: '/management/stock', label: 'Product Stock' },
           { to: '/management/monthly', label: 'Rent & Monthly' },
         ]}
       />

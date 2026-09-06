@@ -2,8 +2,6 @@ export interface Cutter {
   id: string
   name: string
   phone?: string
-  specialty?: string
-  notes?: string
   active: boolean
   createdAt: string
 }

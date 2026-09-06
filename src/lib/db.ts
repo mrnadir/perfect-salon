@@ -17,8 +17,6 @@ function mapCutter(row: Record<string, unknown>): Cutter {
     id: String(row.id),
     name: String(row.name),
     phone: row.phone ? String(row.phone) : undefined,
-    specialty: row.specialty ? String(row.specialty) : undefined,
-    notes: row.notes ? String(row.notes) : undefined,
     active: Boolean(row.active),
     createdAt: String(row.created_at),
   }
@@ -135,8 +133,6 @@ export async function insertCutter(c: Cutter) {
     id: c.id,
     name: c.name,
     phone: c.phone ?? null,
-    specialty: c.specialty ?? null,
-    notes: c.notes ?? null,
     active: c.active,
     created_at: c.createdAt,
   })
@@ -150,11 +146,14 @@ export async function patchCutter(
   const payload: Record<string, unknown> = {}
   if (data.name !== undefined) payload.name = data.name
   if (data.phone !== undefined) payload.phone = data.phone || null
-  if (data.specialty !== undefined) payload.specialty = data.specialty || null
-  if (data.notes !== undefined) payload.notes = data.notes || null
   if (data.active !== undefined) payload.active = data.active
 
   const { error } = await supabase.from('cutters').update(payload).eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteCutterRow(id: string) {
+  const { error } = await supabase.from('cutters').delete().eq('id', id)
   if (error) throw error
 }
 

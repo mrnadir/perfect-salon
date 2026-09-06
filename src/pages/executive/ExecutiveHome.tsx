@@ -148,7 +148,7 @@ export function ExecutiveHome() {
                       {cutter.name}
                     </h2>
                     <p className="truncate text-xs text-text-muted">
-                      {cutter.specialty || 'Cutter'}
+                      {cutter.phone || 'Cutter'}
                     </p>
                   </div>
                 </div>
