@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Trash2 } from 'lucide-react'
+import { ConfirmDeleteModal } from '../../components/ConfirmDeleteModal'
 import { useData } from '../../context/DataContext'
 import { formatMoney } from '../../lib/utils'
+import type { PaymentMethod } from '../../types'
 import {
   btnGhost,
   Checkbox,
@@ -12,11 +14,18 @@ import {
   StatCard,
 } from '../../components/ui'
 
+type PaymentFilter = 'all' | PaymentMethod
+type PendingDelete =
+  | { kind: 'one'; id: string }
+  | { kind: 'selected'; ids: string[] }
+
 export function ManagementIncome() {
   const { cutters, incomes, deleteIncome, deleteIncomes } = useData()
   const [cutterFilter, setCutterFilter] = useState('all')
   const [dateFilter, setDateFilter] = useState('')
+  const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>('all')
   const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null)
   const [busy, setBusy] = useState(false)
 
   const nameOf = useMemo(() => {
@@ -29,9 +38,10 @@ export function ManagementIncome() {
       incomes.filter(
         (i) =>
           (cutterFilter === 'all' || i.cutterId === cutterFilter) &&
-          (!dateFilter || i.date === dateFilter),
+          (!dateFilter || i.date === dateFilter) &&
+          (paymentFilter === 'all' || i.paymentMethod === paymentFilter),
       ),
-    [incomes, cutterFilter, dateFilter],
+    [incomes, cutterFilter, dateFilter, paymentFilter],
   )
 
   const filteredIds = useMemo(() => filtered.map((i) => i.id), [filtered])
@@ -59,7 +69,8 @@ export function ManagementIncome() {
       .sort((a, b) => b.amount - a.amount)
   }, [filtered, nameOf])
 
-  const hasFilters = cutterFilter !== 'all' || Boolean(dateFilter)
+  const hasFilters =
+    cutterFilter !== 'all' || Boolean(dateFilter) || paymentFilter !== 'all'
   const allSelected =
     filteredIds.length > 0 && filteredIds.every((id) => selected.has(id))
   const someSelected = selected.size > 0 && !allSelected
@@ -77,33 +88,37 @@ export function ManagementIncome() {
     setSelected(allSelected ? new Set() : new Set(filteredIds))
   }
 
-  async function removeOne(id: string) {
-    if (!window.confirm('Delete this income entry?')) return
+  function closeDelete() {
+    if (busy) return
+    setPendingDelete(null)
+  }
+
+  async function confirmDelete() {
+    if (!pendingDelete) return
     setBusy(true)
     try {
-      await deleteIncome(id)
-      setSelected((prev) => {
-        const next = new Set(prev)
-        next.delete(id)
-        return next
-      })
+      if (pendingDelete.kind === 'one') {
+        const id = pendingDelete.id
+        await deleteIncome(id)
+        setSelected((prev) => {
+          const next = new Set(prev)
+          next.delete(id)
+          return next
+        })
+      } else {
+        await deleteIncomes(pendingDelete.ids)
+        setSelected(new Set())
+      }
+      setPendingDelete(null)
     } finally {
       setBusy(false)
     }
   }
 
-  async function removeSelected() {
-    const ids = [...selected]
-    if (ids.length === 0) return
-    if (!window.confirm(`Delete ${ids.length} selected income entries?`)) return
-    setBusy(true)
-    try {
-      await deleteIncomes(ids)
-      setSelected(new Set())
-    } finally {
-      setBusy(false)
-    }
-  }
+  const deleteMessage =
+    pendingDelete?.kind === 'selected'
+      ? `Delete ${pendingDelete.ids.length} selected income entries? This cannot be undone.`
+      : 'Delete this income entry? This cannot be undone.'
 
   return (
     <div className="space-y-6">
@@ -140,6 +155,19 @@ export function ManagementIncome() {
               onChange={(e) => setDateFilter(e.target.value)}
             />
           </Field>
+          <Field label="Payment">
+            <select
+              className={`${selectClass} min-w-[8rem]`}
+              value={paymentFilter}
+              onChange={(e) =>
+                setPaymentFilter(e.target.value as PaymentFilter)
+              }
+            >
+              <option value="all">All</option>
+              <option value="Cash">Cash</option>
+              <option value="Bkash">Bkash</option>
+            </select>
+          </Field>
           <button
             type="button"
             disabled={!hasFilters}
@@ -147,6 +175,7 @@ export function ManagementIncome() {
             onClick={() => {
               setCutterFilter('all')
               setDateFilter('')
+              setPaymentFilter('all')
             }}
           >
             Clear
@@ -192,7 +221,9 @@ export function ManagementIncome() {
               type="button"
               className={btnGhost}
               disabled={busy}
-              onClick={() => void removeSelected()}
+              onClick={() =>
+                setPendingDelete({ kind: 'selected', ids: [...selected] })
+              }
             >
               <Trash2 className="h-4 w-4" />
               Delete selected ({selected.size})
@@ -217,6 +248,7 @@ export function ManagementIncome() {
                   </th>
                   <th className="pb-3 font-medium">Date</th>
                   <th className="pb-3 font-medium">Cutter</th>
+                  <th className="pb-3 font-medium">Payment</th>
                   <th className="pb-3 font-medium">Note</th>
                   <th className="pb-3 font-medium text-right">Amount</th>
                   <th className="pb-3 font-medium" />
@@ -234,6 +266,7 @@ export function ManagementIncome() {
                     </td>
                     <td className="py-3 text-text-muted">{i.date}</td>
                     <td className="py-3 text-text">{nameOf(i.cutterId)}</td>
+                    <td className="py-3 text-text">{i.paymentMethod}</td>
                     <td className="py-3 text-text-muted">{i.note || '—'}</td>
                     <td className="py-3 text-right text-success">
                       {formatMoney(i.amount)}
@@ -243,7 +276,9 @@ export function ManagementIncome() {
                         type="button"
                         className={btnGhost}
                         disabled={busy}
-                        onClick={() => void removeOne(i.id)}
+                        onClick={() =>
+                          setPendingDelete({ kind: 'one', id: i.id })
+                        }
                         aria-label="Delete income"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -256,6 +291,15 @@ export function ManagementIncome() {
           </div>
         )}
       </SectionCard>
+
+      <ConfirmDeleteModal
+        open={Boolean(pendingDelete)}
+        eyebrow="Delete income"
+        message={deleteMessage}
+        deleting={busy}
+        onClose={closeDelete}
+        onConfirm={() => void confirmDelete()}
+      />
     </div>
   )
 }

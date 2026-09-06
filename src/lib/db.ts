@@ -22,6 +22,10 @@ function mapCutter(row: Record<string, unknown>): Cutter {
   }
 }
 
+function mapPaymentMethod(value: unknown): CutterIncome['paymentMethod'] {
+  return value === 'Bkash' ? 'Bkash' : 'Cash'
+}
+
 function mapIncome(row: Record<string, unknown>): CutterIncome {
   return {
     id: String(row.id),
@@ -29,6 +33,7 @@ function mapIncome(row: Record<string, unknown>): CutterIncome {
     amount: num(row.amount),
     note: String(row.note ?? ''),
     date: String(row.date),
+    paymentMethod: mapPaymentMethod(row.payment_method),
     createdAt: String(row.created_at),
   }
 }
@@ -38,9 +43,8 @@ function mapExpense(row: Record<string, unknown>): CutterExpense {
     id: String(row.id),
     cutterId: String(row.cutter_id),
     amount: num(row.amount),
-    category: String(row.category ?? ''),
     note: String(row.note ?? ''),
-    date: String(row.date),
+    date: String(row.date).slice(0, 10),
     createdAt: String(row.created_at),
   }
 }
@@ -164,6 +168,7 @@ export async function insertIncome(i: CutterIncome) {
     amount: i.amount,
     note: i.note,
     date: i.date,
+    payment_method: i.paymentMethod,
     created_at: i.createdAt,
   })
   if (error) throw error
@@ -185,7 +190,6 @@ export async function insertExpense(e: CutterExpense) {
     id: e.id,
     cutter_id: e.cutterId,
     amount: e.amount,
-    category: e.category,
     note: e.note,
     date: e.date,
     created_at: e.createdAt,

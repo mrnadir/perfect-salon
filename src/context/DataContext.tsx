@@ -60,11 +60,11 @@ interface DataContextValue {
     amount: number
     note: string
     date?: string
+    paymentMethod?: CutterIncome['paymentMethod']
   }) => Promise<void>
   addExpense: (data: {
     cutterId: string
     amount: number
-    category: string
     note: string
     date?: string
   }) => Promise<void>
@@ -216,6 +216,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       amount: number
       note: string
       date?: string
+      paymentMethod?: CutterIncome['paymentMethod']
     }) => {
       const entry: CutterIncome = {
         id: uid('income'),
@@ -223,6 +224,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         amount: data.amount,
         note: data.note.trim(),
         date: data.date || todayISO(),
+        paymentMethod: data.paymentMethod === 'Bkash' ? 'Bkash' : 'Cash',
         createdAt: new Date().toISOString(),
       }
       await insertIncome(entry)
@@ -235,7 +237,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
     async (data: {
       cutterId: string
       amount: number
-      category: string
       note: string
       date?: string
     }) => {
@@ -243,7 +244,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
         id: uid('cexp'),
         cutterId: data.cutterId,
         amount: data.amount,
-        category: data.category,
         note: data.note.trim(),
         date: data.date || todayISO(),
         createdAt: new Date().toISOString(),

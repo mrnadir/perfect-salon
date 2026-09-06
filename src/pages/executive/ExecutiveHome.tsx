@@ -60,12 +60,19 @@ export function ExecutiveHome() {
   const dayTotals = useMemo(() => {
     let income = 0
     let expense = 0
+    let cash = 0
+    let bkash = 0
     for (const row of totalsByCutter.values()) {
       income += row.income
       expense += row.expense
     }
-    return { income, expense, net: income - expense }
-  }, [totalsByCutter])
+    for (const i of incomes) {
+      if (i.date !== today) continue
+      if (i.paymentMethod === 'Bkash') bkash += i.amount
+      else cash += i.amount
+    }
+    return { income, expense, net: income - expense, cash, bkash }
+  }, [totalsByCutter, incomes, today])
 
   return (
     <div className="space-y-6">
@@ -92,7 +99,7 @@ export function ExecutiveHome() {
         </Link>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <div className="rounded-2xl border border-accent/20 bg-accent-soft px-4 py-3">
           <p className="text-[11px] font-bold tracking-wide text-navy uppercase">
             Total income
@@ -115,6 +122,22 @@ export function ExecutiveHome() {
           </p>
           <p className="mt-1 text-2xl font-bold text-navy">
             {formatTaka(dayTotals.net)}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+          <p className="text-[11px] font-bold tracking-wide text-text-muted uppercase">
+            Cash
+          </p>
+          <p className="mt-1 text-2xl font-bold text-primary">
+            {formatTaka(dayTotals.cash)}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-border bg-surface px-4 py-3">
+          <p className="text-[11px] font-bold tracking-wide text-text-muted uppercase">
+            Bkash
+          </p>
+          <p className="mt-1 text-2xl font-bold text-primary">
+            {formatTaka(dayTotals.bkash)}
           </p>
         </div>
       </div>
@@ -203,7 +226,7 @@ export function ExecutiveHome() {
         kind={modal.open ? modal.kind : 'income'}
         cutterName={modal.open ? modal.cutter.name : ''}
         onClose={() => setModal({ open: false })}
-        onSubmit={({ amount, note }) => {
+        onSubmit={({ amount, note, paymentMethod }) => {
           if (!modal.open) return
           if (modal.kind === 'income') {
             addIncome({
@@ -211,12 +234,12 @@ export function ExecutiveHome() {
               amount,
               note,
               date: today,
+              paymentMethod: paymentMethod || 'Cash',
             })
           } else {
             addExpense({
               cutterId: modal.cutter.id,
               amount,
-              category: 'Other',
               note,
               date: today,
             })

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Trash2 } from 'lucide-react'
+import { ConfirmDeleteModal } from '../../components/ConfirmDeleteModal'
 import { useData } from '../../context/DataContext'
 import { formatMoney } from '../../lib/utils'
 import {
@@ -12,12 +13,17 @@ import {
   StatCard,
 } from '../../components/ui'
 
+type PendingDelete =
+  | { kind: 'one'; id: string }
+  | { kind: 'selected'; ids: string[] }
+
 export function ManagementShopExpenses() {
   const { cutters, shopExpenses, deleteShopExpense, deleteShopExpenses } =
     useData()
   const [dateFilter, setDateFilter] = useState('')
   const [cutterFilter, setCutterFilter] = useState('all')
   const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null)
   const [busy, setBusy] = useState(false)
 
   const cutterName = useMemo(() => {
@@ -79,36 +85,37 @@ export function ManagementShopExpenses() {
     setSelected(allSelected ? new Set() : new Set(filteredIds))
   }
 
-  async function removeOne(id: string) {
-    if (!window.confirm('Delete this shop expense entry?')) return
+  function closeDelete() {
+    if (busy) return
+    setPendingDelete(null)
+  }
+
+  async function confirmDelete() {
+    if (!pendingDelete) return
     setBusy(true)
     try {
-      await deleteShopExpense(id)
-      setSelected((prev) => {
-        const next = new Set(prev)
-        next.delete(id)
-        return next
-      })
+      if (pendingDelete.kind === 'one') {
+        const id = pendingDelete.id
+        await deleteShopExpense(id)
+        setSelected((prev) => {
+          const next = new Set(prev)
+          next.delete(id)
+          return next
+        })
+      } else {
+        await deleteShopExpenses(pendingDelete.ids)
+        setSelected(new Set())
+      }
+      setPendingDelete(null)
     } finally {
       setBusy(false)
     }
   }
 
-  async function removeSelected() {
-    const ids = [...selected]
-    if (ids.length === 0) return
-    if (
-      !window.confirm(`Delete ${ids.length} selected shop expense entries?`)
-    )
-      return
-    setBusy(true)
-    try {
-      await deleteShopExpenses(ids)
-      setSelected(new Set())
-    } finally {
-      setBusy(false)
-    }
-  }
+  const deleteMessage =
+    pendingDelete?.kind === 'selected'
+      ? `Delete ${pendingDelete.ids.length} selected shop expense entries? This cannot be undone.`
+      : 'Delete this shop expense entry? This cannot be undone.'
 
   return (
     <div className="space-y-6">
@@ -201,7 +208,9 @@ export function ManagementShopExpenses() {
               type="button"
               className={btnGhost}
               disabled={busy}
-              onClick={() => void removeSelected()}
+              onClick={() =>
+                setPendingDelete({ kind: 'selected', ids: [...selected] })
+              }
             >
               <Trash2 className="h-4 w-4" />
               Delete selected ({selected.size})
@@ -254,7 +263,9 @@ export function ManagementShopExpenses() {
                         type="button"
                         className={btnGhost}
                         disabled={busy}
-                        onClick={() => void removeOne(e.id)}
+                        onClick={() =>
+                          setPendingDelete({ kind: 'one', id: e.id })
+                        }
                         aria-label="Delete shop expense"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -267,6 +278,15 @@ export function ManagementShopExpenses() {
           </div>
         )}
       </SectionCard>
+
+      <ConfirmDeleteModal
+        open={Boolean(pendingDelete)}
+        eyebrow="Delete shop expense"
+        message={deleteMessage}
+        deleting={busy}
+        onClose={closeDelete}
+        onConfirm={() => void confirmDelete()}
+      />
     </div>
   )
 }
