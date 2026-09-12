@@ -123,6 +123,7 @@ export function ManagementLayout() {
           { to: '/management/shop-expenses', label: 'Shop Expense' },
           { to: '/management/stock', label: 'Product Stock' },
           { to: '/management/monthly', label: 'Rent & Monthly' },
+          { to: '/management/analytics', label: 'Analytics' },
         ]}
       />
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">

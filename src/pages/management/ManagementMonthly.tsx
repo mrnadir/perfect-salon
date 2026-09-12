@@ -306,7 +306,7 @@ function AddMonthlyCostModal({
               required
             />
           </Field>
-          <Field label="Amount (BDT)">
+          <Field label="Amount (৳)">
             <input
               type="number"
               min="1"

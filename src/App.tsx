@@ -14,6 +14,7 @@ import { ManagementExpenses } from './pages/management/ManagementExpenses'
 import { ManagementShopExpenses } from './pages/management/ManagementShopExpenses'
 import { ManagementStock } from './pages/management/ManagementStock'
 import { ManagementMonthly } from './pages/management/ManagementMonthly'
+import { ManagementAnalytics } from './pages/management/ManagementAnalytics'
 import { Scissors } from 'lucide-react'
 import { btnPrimary } from './components/ui'
 
@@ -88,6 +89,10 @@ function AppRoutes() {
             <Route
               path="/management/monthly"
               element={<ManagementMonthly />}
+            />
+            <Route
+              path="/management/analytics"
+              element={<ManagementAnalytics />}
             />
           </Route>
         </Route>

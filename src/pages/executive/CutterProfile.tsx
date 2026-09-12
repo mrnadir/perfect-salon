@@ -153,7 +153,7 @@ export function CutterProfile() {
       <div className="grid gap-6 lg:grid-cols-2">
         <SectionCard title="Daily income" description="Add today's earnings">
           <form onSubmit={onIncome} className="space-y-3">
-            <Field label="Amount (BDT)">
+            <Field label="Amount (৳)">
               <input
                 type="number"
                 min="1"
@@ -226,7 +226,7 @@ export function CutterProfile() {
 
         <SectionCard title="Daily expense" description="Add cutter expenses">
           <form onSubmit={onExpense} className="space-y-3">
-            <Field label="Amount (BDT)">
+            <Field label="Amount (৳)">
               <input
                 type="number"
                 min="1"

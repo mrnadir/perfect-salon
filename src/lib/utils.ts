@@ -11,11 +11,10 @@ export function currentMonth() {
 }
 
 export function formatMoney(amount: number) {
-  return new Intl.NumberFormat('en-BD', {
-    style: 'currency',
-    currency: 'BDT',
+  const formatted = new Intl.NumberFormat('en-BD', {
     maximumFractionDigits: 0,
   }).format(amount)
+  return `৳${formatted}`
 }
 
 /** Remove leftover salon data keys from the old localStorage backend. */

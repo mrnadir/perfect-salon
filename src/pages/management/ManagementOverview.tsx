@@ -79,6 +79,7 @@ export function ManagementOverview() {
           <li>• Shop expense summary</li>
           <li>• Product stock</li>
           <li>• Shop rent + monthly expenses</li>
+          <li>• Analytics — income, cost &amp; 50% share</li>
         </ul>
       </SectionCard>
     </div>
